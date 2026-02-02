@@ -13,6 +13,7 @@ This ensures:
 
 ## Folder Structure
 
+```bash
 migrations-repo/
 ├── db/
 │ ├── migrations/ # ← all versioned .sql migration files live here
@@ -25,6 +26,8 @@ migrations-repo/
 ├── .env.example # ← template for DATABASE_URL
 ├── .gitignore
 └── README.md
+```
+
 
 ## Prerequisites
 
