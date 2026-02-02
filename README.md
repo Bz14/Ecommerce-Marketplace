@@ -6,7 +6,7 @@
 
 - We are using the tool db mate for dumping the current schema and also perform migrations from now on
 
-## Check connection & migration status
+### Check connection & migration status
 
 `docker compose run --rm dbmate status`
 
