@@ -1,0 +1,204 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ecommerce
+      POSTGRES_PASSWORD: eyu@2022
+      POSTGRES_DB: marketplace
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ecommerce"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # redis:
+  #   image: redis:7-alpine
+  #   restart: unless-stopped
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis_data:/data
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 5s
+  #     timeout: 3s
+  #     retries: 5
+
+  # rabbitmq:
+  #   image: rabbitmq:3-management-alpine
+  #   restart: unless-stopped
+  #   environment:
+  #     RABBITMQ_DEFAULT_USER: guest
+  #     RABBITMQ_DEFAULT_PASS: guest
+  #   ports:
+  #     - "5672:5672" # AMQP
+  #     - "15672:15672" # Management UI
+  #   volumes:
+  #     - rabbitmq_data:/var/lib/rabbitmq
+  #   healthcheck:
+  #     test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+  auth-service:
+    build:
+      context: ./AuthenticationService
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      PORT: 3000
+      NODE_ENV: development
+      DATABASE_URL: postgres://ecommerce:eyu@2022@postgres:5432/marketplace
+      JWT_SECRET: jwt-secret
+      # REDIS_URL: redis://redis:6379
+      # RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      postgres:
+        condition: service_healthy
+      # redis:
+      #   condition: service_healthy
+      # rabbitmq:
+      #   condition: service_healthy
+    volumes:
+      - ./services/auth:/app
+      - /app/node_modules
+
+  # product-service:
+  #   build:
+  #     context: ./services/product
+  #     dockerfile: Dockerfile
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3002:3000"
+  #   environment:
+  #     PORT: 3000
+  #     NODE_ENV: development
+  #     DATABASE_URL: postgres://ecommerce:your_secure_password_change_me@postgres:5432/marketplace
+  #     REDIS_URL: redis://redis:6379
+  #     RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #   volumes:
+  #     - ./services/product:/app
+  #     - /app/node_modules
+
+  # order-service:
+  #   build:
+  #     context: ./services/order
+  #     dockerfile: Dockerfile
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3003:3000"
+  #   environment:
+  #     PORT: 3000
+  #     NODE_ENV: development
+  #     DATABASE_URL: postgres://ecommerce:your_secure_password_change_me@postgres:5432/marketplace
+  #     REDIS_URL: redis://redis:6379
+  #     RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+  #     AUTH_SERVICE_URL: http://auth-service:3000
+  #     PRODUCT_SERVICE_URL: http://product-service:3000
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #     rabbitmq:
+  #       condition: service_healthy
+  #     auth-service:
+  #       condition: service_started
+  #     product-service:
+  #       condition: service_started
+
+  # payment-service:
+  #   build:
+  #     context: ./services/payment
+  #     dockerfile: Dockerfile
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3004:3000"
+  #   environment:
+  #     PORT: 3000
+  #     NODE_ENV: development
+  #     DATABASE_URL: postgres://ecommerce:your_secure_password_change_me@postgres:5432/marketplace
+  #     REDIS_URL: redis://redis:6379
+  #     RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+  #     CHAPA_SECRET_KEY: your-chapa-secret-key
+  #     CHAPA_PUBLIC_KEY: your-chapa-public-key
+  #     ORDER_SERVICE_URL: http://order-service:3000
+  #     WEBHOOK_SECRET: your-webhook-verification-secret
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #     rabbitmq:
+  #       condition: service_healthy
+  #     order-service:
+  #       condition: service_started
+
+  # notification-service:
+  #   build:
+  #     context: ./services/notification
+  #     dockerfile: Dockerfile
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3005:3000"
+  #   environment:
+  #     PORT: 3000
+  #     NODE_ENV: development
+  #     DATABASE_URL: postgres://ecommerce:your_secure_password_change_me@postgres:5432/marketplace
+  #     REDIS_URL: redis://redis:6379
+  #     RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+  #     ORDER_SERVICE_URL: http://order-service:3000
+  #     # Add email service credentials (e.g. SendGrid, Resend, Mailgun)
+  #     EMAIL_SERVICE: resend
+  #     RESEND_API_KEY: your-resend-api-key
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #     rabbitmq:
+  #       condition: service_healthy
+
+  # ai-service:
+  #   build:
+  #     context: ./services/ai
+  #     dockerfile: Dockerfile
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3006:3000"
+  #   environment:
+  #     PORT: 3000
+  #     NODE_ENV: development
+  #     DATABASE_URL: postgres://ecommerce:your_secure_password_change_me@postgres:5432/marketplace
+  #     REDIS_URL: redis://redis:6379
+  #     RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+  #     # LLM / AI provider settings
+  #     OPENAI_API_KEY: sk-xxx-your-key
+  #     # or GROQ_API_KEY, ANTHROPIC_API_KEY, etc.
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #     rabbitmq:
+  #       condition: service_healthy
+
+volumes:
+  postgres_data:
+  # redis_data:
+  # rabbitmq_data:
