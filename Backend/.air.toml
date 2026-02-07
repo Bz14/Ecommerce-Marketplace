@@ -1,0 +1,19 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  cmd = "go build -o ./tmp/main.exe ."
+  bin = "./tmp/main.exe"
+  delay = 1000               # ms before killing old process
+  kill_delay = "1s"          # give some grace time to shut down
+  include_ext = ["go", "tpl", "tmpl", "html"]
+  exclude_dir = ["assets", "tmp", "vendor", "testdata"]
+  exclude_regex = ["_test.go"]
+  log = "build-errors.log"
+  poll = true                # ← important for Windows reliability
+
+[log]
+  time = true                # helps debugging
+
+[misc]
+  clean_on_exit = true
